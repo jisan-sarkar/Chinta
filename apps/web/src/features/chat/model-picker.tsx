@@ -91,7 +91,7 @@ export function ModelPicker({
     <button
       type="button"
       className={cn(
-        "inline-flex size-9 shrink-0 items-center justify-center rounded-full text-sm transition hover:bg-[var(--muted)]",
+        "inline-flex size-9 shrink-0 items-center justify-center rounded-full text-sm outline-none transition-[background-color,box-shadow,opacity,transform] duration-150 hover:bg-[var(--muted)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] active:scale-[0.98]",
         !enabled && "opacity-55",
       )}
       aria-label="Models"

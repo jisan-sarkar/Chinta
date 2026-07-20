@@ -49,39 +49,39 @@ export function ModelModal({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[min(42rem,calc(100vh-2rem))] w-[min(42rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-2xl outline-none">
-          <div className="flex items-center justify-between border-b border-[var(--border)] p-4">
-            <div>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[1px]" />
+        <Dialog.Content className="fixed inset-x-2 bottom-2 z-50 flex max-h-[min(44rem,calc(100dvh-1rem))] flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-2xl outline-none sm:inset-auto sm:left-1/2 sm:top-1/2 sm:w-[min(44rem,calc(100vw-2rem))] sm:-translate-x-1/2 sm:-translate-y-1/2">
+          <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--border)] p-4">
+            <div className="min-w-0">
               <Dialog.Title className="text-sm font-semibold">Models</Dialog.Title>
               <Dialog.Description className="mt-1 text-sm text-[var(--muted-foreground)]">
                 Choose an OpenRouter model for this chat.
               </Dialog.Description>
             </div>
             <Dialog.Close asChild>
-              <Button size="icon" aria-label="Close models">
+              <Button size="icon" aria-label="Close models" className="rounded-xl">
                 <X size={17} />
               </Button>
             </Dialog.Close>
           </div>
 
-          <div className="p-3">
+          <div className="shrink-0 border-b border-[var(--border)]/70 p-3">
             <div className="relative">
               <Search
-                className="pointer-events-none absolute left-3 top-2.5 text-[var(--muted-foreground)]"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)]"
                 size={16}
               />
               <Input
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search models"
-                className="pl-9"
+                className="h-10 rounded-xl pl-9"
                 disabled={modalState !== "ready"}
               />
             </div>
           </div>
 
-          <div className="max-h-[28rem] overflow-y-auto px-3 pb-3">
+          <div className="min-h-0 overflow-y-auto px-2 py-3 sm:px-3">
             {modalState === "disconnected" ? (
               <div className="rounded-xl border border-[var(--border)] bg-[var(--muted)] p-4 text-sm text-[var(--muted-foreground)]">
                 Connect OpenRouter before selecting a model.
@@ -99,25 +99,27 @@ export function ModelModal({
                 <div
                   key={model.id}
                   className={cn(
-                    "mb-1 flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left text-sm transition hover:bg-[var(--muted)]",
-                    selectedModel === model.id && "bg-[var(--muted)]",
+                    "mb-1 flex w-full min-w-0 items-start gap-3 rounded-xl px-3 py-3 text-left text-sm transition-[background-color,box-shadow] duration-150 hover:bg-[var(--muted)]",
+                    selectedModel === model.id && "bg-[var(--muted)] shadow-sm",
                   )}
                 >
-                  <div className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--card)]">
+                  <div className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--card)]">
                     <Cpu size={16} />
                   </div>
                   <button
                     type="button"
                     onClick={() => setSelectedModel(model.id)}
-                    className="min-w-0 flex-1 text-left"
+                    className="min-w-0 flex-1 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="truncate font-medium">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="min-w-0 truncate font-medium">
                         {formatModelLabel(model)}
                       </span>
-                      {selectedModel === model.id ? <Check size={14} /> : null}
+                      {selectedModel === model.id ? (
+                        <Check size={14} className="shrink-0 text-[var(--accent)]" />
+                      ) : null}
                     </div>
-                    <p className="truncate text-xs text-[var(--muted-foreground)]">
+                    <p className="mt-0.5 truncate text-xs text-[var(--muted-foreground)]">
                       {model.id}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1">
@@ -137,10 +139,12 @@ export function ModelModal({
                     </div>
                   </button>
                   {selectedModel === model.id && supportsReasoning(model) ? (
-                    <ReasoningDropdown
-                      value={selectedReasoning}
-                      onChange={setSelectedReasoning}
-                    />
+                    <div className="shrink-0">
+                      <ReasoningDropdown
+                        value={selectedReasoning}
+                        onChange={setSelectedReasoning}
+                      />
+                    </div>
                   ) : null}
                 </div>
               ))
@@ -164,7 +168,7 @@ function ReasoningDropdown({
       <DropdownMenu.Trigger asChild>
         <button
           type="button"
-          className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--card)] px-2 text-xs capitalize transition hover:bg-[var(--muted)]"
+          className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--card)] px-2 text-xs capitalize outline-none transition hover:bg-[var(--muted)] focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
           aria-label="Reasoning effort"
         >
           {value}
@@ -175,6 +179,7 @@ function ReasoningDropdown({
         <DropdownMenu.Content
           align="end"
           sideOffset={6}
+          collisionPadding={12}
           className="z-[60] w-36 rounded-xl border border-[var(--border)] bg-[var(--card)] p-1 shadow-xl"
         >
           {reasoningOptions.map((option) => (

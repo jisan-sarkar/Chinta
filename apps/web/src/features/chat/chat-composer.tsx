@@ -41,11 +41,11 @@ export function ChatComposer({
   return (
     <div
       className={cn(
-        "mx-auto w-full max-w-4xl px-3 sm:px-4",
-        centered ? "" : "pb-4",
+        "mx-auto w-full max-w-4xl px-3 sm:px-5",
+        centered ? "" : "pb-[max(1rem,env(safe-area-inset-bottom))]",
       )}
     >
-      <div className="flex min-h-16 items-end gap-2 rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-2 shadow-sm">
+      <div className="flex min-h-14 items-center gap-1.5 rounded-[1.75rem] border border-[var(--border)] bg-[var(--card)] p-1.5 shadow-[var(--shadow-soft)] transition-[border-color,box-shadow] duration-200 focus-within:border-[color-mix(in_srgb,var(--accent),var(--border)_55%)] sm:min-h-16 sm:gap-2 sm:rounded-[2rem] sm:p-2">
         <ComposerAddMenu />
         <Textarea
           value={prompt}
@@ -58,9 +58,9 @@ export function ChatComposer({
           }}
           placeholder="Ask anything"
           rows={1}
-          className="max-h-32 min-h-10 flex-1 border-0 bg-transparent px-0 py-2 text-base focus:ring-0"
+          className="max-h-32 min-h-10 flex-1 self-center border-0 bg-transparent px-1 py-2 text-[15px] leading-6 focus:ring-0 sm:px-0 sm:text-base"
         />
-        <div className="flex shrink-0 items-center gap-1 pb-0.5">
+        <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
           <ProviderPicker
             credentials={credentials}
             onOpen={onOpenProviderModal}

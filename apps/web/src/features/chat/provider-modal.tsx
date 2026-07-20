@@ -85,8 +85,8 @@ export function ProviderModal({
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[min(42rem,calc(100vh-2rem))] w-[min(34rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-2xl outline-none">
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[1px]" />
+        <Dialog.Content className="fixed inset-x-2 bottom-2 z-50 flex max-h-[min(42rem,calc(100dvh-1rem))] flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-2xl outline-none sm:inset-auto sm:left-1/2 sm:top-1/2 sm:w-[min(34rem,calc(100vw-2rem))] sm:-translate-x-1/2 sm:-translate-y-1/2">
           {activeProvider ? (
             <OpenRouterSetup
               credential={openRouterCredential}
@@ -124,15 +124,15 @@ function ProviderList({
 }) {
   return (
     <>
-      <div className="flex items-center justify-between border-b border-[var(--border)] p-4">
+      <div className="flex shrink-0 items-center justify-between border-b border-[var(--border)] p-4">
         <Dialog.Title className="text-sm font-semibold">Providers</Dialog.Title>
         <Dialog.Close asChild>
-          <Button size="icon" aria-label="Close providers">
+          <Button size="icon" aria-label="Close providers" className="rounded-xl">
             <X size={17} />
           </Button>
         </Dialog.Close>
       </div>
-      <div className="max-h-[32rem] overflow-y-auto p-3">
+      <div className="min-h-0 overflow-y-auto p-2 sm:p-3">
         {providerOptions.map((provider) => {
           const connected = isProviderConnected(provider.id, credentials);
           const disabled = !provider.connectable;
@@ -144,12 +144,14 @@ function ProviderList({
               disabled={disabled}
               onClick={() => onSelectProvider(provider.id)}
               className={cn(
-                "mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm transition hover:bg-[var(--muted)]",
-                selectedProvider === provider.id && "bg-[var(--muted)]",
+                "mb-1 flex min-h-14 w-full min-w-0 items-center gap-3 rounded-xl px-3 py-3 text-left text-sm outline-none transition-[background-color,box-shadow,opacity] duration-150 hover:bg-[var(--muted)] focus-visible:ring-2 focus-visible:ring-[var(--ring)]",
+                selectedProvider === provider.id && "bg-[var(--muted)] shadow-sm",
                 disabled && "cursor-not-allowed opacity-55",
               )}
             >
-              <ProviderIcon provider={provider.id} className="size-4" />
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--card)]">
+                <ProviderIcon provider={provider.id} className="size-4" />
+              </span>
               <div className="min-w-0 flex-1">
                 <div className="truncate font-medium">{provider.label}</div>
                 <div className="truncate text-xs text-[var(--muted-foreground)]">
@@ -160,8 +162,13 @@ function ProviderList({
                     : "Coming soon"}
                 </div>
               </div>
-              {connected ? <Check size={15} /> : null}
-              {disabled ? <Lock size={15} /> : null}
+              {connected ? (
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--accent),transparent_86%)] px-2 py-1 text-[11px] font-medium text-[var(--accent)]">
+                  <Check size={13} />
+                  <span className="hidden min-[380px]:inline">Connected</span>
+                </span>
+              ) : null}
+              {disabled ? <Lock size={15} className="shrink-0" /> : null}
             </button>
           );
         })}
@@ -195,21 +202,26 @@ function OpenRouterSetup({
 }) {
   return (
     <>
-      <div className="flex items-center justify-between border-b border-[var(--border)] p-4">
+      <div className="flex shrink-0 items-center justify-between border-b border-[var(--border)] p-4">
         <div className="flex items-center gap-2">
-          <Button size="icon" aria-label="Back to providers" onClick={onBack}>
+          <Button
+            size="icon"
+            aria-label="Back to providers"
+            onClick={onBack}
+            className="rounded-xl"
+          >
             <ArrowLeft size={17} />
           </Button>
           <Dialog.Title className="text-sm font-semibold">OpenRouter</Dialog.Title>
         </div>
         <Dialog.Close asChild>
-          <Button size="icon" aria-label="Close providers">
+          <Button size="icon" aria-label="Close providers" className="rounded-xl">
             <X size={17} />
           </Button>
         </Dialog.Close>
       </div>
 
-      <div className="p-5">
+      <div className="min-h-0 overflow-y-auto p-4 sm:p-5">
         <div className="flex items-start gap-3">
           <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--muted)]">
             <ProviderIcon provider="openrouter" className="size-5" />
@@ -232,7 +244,7 @@ function OpenRouterSetup({
               <Check size={15} />
               Connected
             </div>
-            <p className="mt-1 text-[var(--muted-foreground)]">
+            <p className="mt-1 break-all text-[var(--muted-foreground)]">
               Fingerprint: {credential.keyFingerprint}
             </p>
           </div>
@@ -248,13 +260,20 @@ function OpenRouterSetup({
             placeholder="sk-or-..."
             {...registerApiKey}
           />
-          {apiKeyError ? <p className="text-sm text-red-500">{apiKeyError}</p> : null}
+          {apiKeyError ? (
+            <p className="text-sm leading-5 text-red-500">{apiKeyError}</p>
+          ) : null}
           {hasSaveError ? (
-            <p className="text-sm text-red-500">
+            <p className="text-sm leading-5 text-red-500">
               {saveErrorMessage}
             </p>
           ) : null}
-          <Button type="submit" variant="primary" disabled={isSaving}>
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={isSaving}
+            className="w-full rounded-xl sm:w-auto"
+          >
             <KeyRound size={16} />
             Save OpenRouter key
           </Button>

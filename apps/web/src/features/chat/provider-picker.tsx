@@ -20,7 +20,7 @@ export function ProviderPicker({
 
   return (
     <button
-      className="relative inline-flex size-9 shrink-0 items-center justify-center rounded-full text-sm transition hover:bg-[var(--muted)]"
+      className="relative inline-flex size-9 shrink-0 items-center justify-center rounded-full text-sm outline-none transition-[background-color,box-shadow,opacity,transform] duration-150 hover:bg-[var(--muted)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] active:scale-[0.98]"
       type="button"
       aria-label="Providers"
       title="Providers"
@@ -31,7 +31,7 @@ export function ProviderPicker({
         <CheckCircle2
           size={12}
           className={cn(
-            "absolute bottom-1 right-1 rounded-full bg-[var(--card)] text-[var(--accent)]",
+            "absolute bottom-1 right-1 rounded-full bg-[var(--card)] text-[var(--accent)] shadow-sm",
           )}
           aria-hidden="true"
         />

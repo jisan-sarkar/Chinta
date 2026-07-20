@@ -13,7 +13,7 @@ export function MessageList({
   if (messages.length === 0 && !streamingText) {
     return (
       <div className="flex min-h-full flex-col items-center justify-center px-4 text-center">
-        <h1 className="text-3xl font-semibold tracking-normal sm:text-4xl">
+        <h1 className="max-w-[min(38rem,calc(100vw-2rem))] text-[clamp(1.75rem,6vw,2.5rem)] font-semibold leading-tight tracking-normal">
           What&apos;s on your mind today?
         </h1>
       </div>
@@ -21,7 +21,7 @@ export function MessageList({
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-7 px-4 py-8">
+    <div className="mx-auto w-full max-w-3xl space-y-6 px-3 py-6 sm:space-y-7 sm:px-5 sm:py-8">
       {messages.map((message) => (
         <MessageBubble key={message.id} message={message} />
       ))}

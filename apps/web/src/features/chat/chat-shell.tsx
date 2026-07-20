@@ -129,7 +129,7 @@ export function ChatShell() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[var(--background)] text-[var(--foreground)]">
+    <div className="flex min-h-dvh overflow-hidden bg-[var(--background)] text-[var(--foreground)]">
       <ChatSidebar
         conversations={conversations.data ?? []}
         activeConversationId={chat.activeConversationId}
@@ -138,9 +138,10 @@ export function ChatShell() {
         onQueryChange={setQuery}
         onNewChat={chat.reset}
         onLoadConversation={(id) => void loadConversation(id)}
+        onOpenChange={setSidebarOpen}
       />
 
-      <main className="flex min-w-0 flex-1 flex-col">
+      <main className="flex h-dvh min-w-0 flex-1 flex-col overflow-hidden">
         <ChatHeader
           title={activeTitle}
           onOpenSidebar={() => setSidebarOpen(true)}
@@ -149,8 +150,8 @@ export function ChatShell() {
         <section className="flex min-h-0 flex-1 overflow-hidden">
           <div className="flex min-w-0 flex-1 flex-col">
             {composerPlacement === "center" ? (
-              <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-8 px-3 pb-20">
-                <h1 className="text-center text-2xl font-semibold tracking-normal sm:text-3xl">
+              <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-7 px-3 pb-[max(5rem,env(safe-area-inset-bottom))] pt-8 sm:gap-8 sm:px-6">
+                <h1 className="max-w-[min(42rem,calc(100vw-2rem))] text-center text-[clamp(1.55rem,4.2vw,2rem)] font-semibold leading-tight tracking-normal">
                   Good to see you, Zisan Sarker.
                 </h1>
                 <ChatComposer

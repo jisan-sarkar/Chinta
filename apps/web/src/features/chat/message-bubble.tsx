@@ -23,16 +23,16 @@ export function MessageBubble({ message }: { message: DisplayMessage }) {
     >
       <div
         className={cn(
-          "max-w-[min(85%,42rem)] rounded-2xl px-4 py-3 text-[15px] leading-7",
+          "min-w-0 max-w-[min(88%,42rem)] rounded-2xl px-4 py-3 text-[15px] leading-7 sm:max-w-[min(85%,42rem)]",
           message.role === "user"
             ? "bg-[var(--accent)] text-[var(--accent-foreground)]"
-            : "bg-transparent px-0",
+            : "w-full bg-transparent px-0",
         )}
       >
         {message.role === "assistant" ? (
           <MarkdownMessage content={text} />
         ) : (
-          <p className="whitespace-pre-wrap">{text}</p>
+          <p className="whitespace-pre-wrap break-words">{text}</p>
         )}
       </div>
     </div>

@@ -15,17 +15,19 @@ export function ChatHeader({
   const { resolvedTheme, setTheme } = useTheme();
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between px-3">
+    <header className="flex h-14 shrink-0 items-center justify-between bg-[var(--background)]/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-[var(--background)]/80 sm:px-4">
       <div className="flex min-w-0 items-center gap-2">
         <Button
           size="icon"
-          className="md:hidden"
+          className="rounded-xl lg:hidden"
           onClick={onOpenSidebar}
           aria-label="Open sidebar"
         >
           <Menu size={18} />
         </Button>
-        <div className="truncate text-sm font-medium">{title}</div>
+        <div className="truncate text-sm font-medium text-[var(--muted-foreground)] sm:text-[var(--foreground)]">
+          {title}
+        </div>
       </div>
 
       <div className="flex items-center gap-1">
@@ -33,6 +35,7 @@ export function ChatHeader({
           size="icon"
           onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
           aria-label="Toggle theme"
+          className="rounded-xl"
         >
           <SunMoon size={18} />
         </Button>
