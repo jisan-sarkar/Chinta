@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 
 import { api, streamChat } from "@/lib/api";
 import { getSelectableModels } from "./model-picker";
@@ -15,16 +15,35 @@ import { ModelModal } from "./model-modal";
 import { ProviderModal } from "./provider-modal";
 import { getProviderOption } from "./provider-catalog";
 import { isProviderConnected } from "./provider-picker";
+import {
+  readSidebarExpandedPreference,
+  sidebarExpandedChangedEvent,
+  type SidebarFocusTarget,
+  writeSidebarExpandedPreference,
+  notifySidebarExpandedPreferenceChanged,
+} from "./sidebar-state";
 
 export function ChatShell() {
   const queryClient = useQueryClient();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const sidebarExpanded = useSyncExternalStore(
+    subscribeToSidebarExpandedPreference,
+    getSidebarExpandedPreferenceSnapshot,
+    () => true,
+  );
+  const [sidebarFocusTarget, setSidebarFocusTarget] =
+    useState<SidebarFocusTarget>();
   const [providerModalOpen, setProviderModalOpen] = useState(false);
   const [modelModalOpen, setModelModalOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [prompt, setPrompt] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const chat = useChatStore();
+
+  function updateSidebarExpanded(expanded: boolean) {
+    writeSidebarExpandedPreference(window.localStorage, expanded);
+    notifySidebarExpandedPreferenceChanged();
+  }
 
   const conversations = useQuery({
     queryKey: ["conversations", query],
@@ -135,10 +154,14 @@ export function ChatShell() {
         activeConversationId={chat.activeConversationId}
         query={query}
         open={sidebarOpen}
+        expanded={sidebarExpanded}
+        focusTarget={sidebarFocusTarget}
         onQueryChange={setQuery}
         onNewChat={chat.reset}
         onLoadConversation={(id) => void loadConversation(id)}
         onOpenChange={setSidebarOpen}
+        onExpandedChange={updateSidebarExpanded}
+        onFocusTargetChange={setSidebarFocusTarget}
       />
 
       <main className="flex h-dvh min-w-0 flex-1 flex-col overflow-hidden">
@@ -203,4 +226,18 @@ export function ChatShell() {
       </main>
     </div>
   );
+}
+
+function subscribeToSidebarExpandedPreference(onStoreChange: () => void) {
+  window.addEventListener("storage", onStoreChange);
+  window.addEventListener(sidebarExpandedChangedEvent, onStoreChange);
+
+  return () => {
+    window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener(sidebarExpandedChangedEvent, onStoreChange);
+  };
+}
+
+function getSidebarExpandedPreferenceSnapshot() {
+  return readSidebarExpandedPreference(window.localStorage);
 }
