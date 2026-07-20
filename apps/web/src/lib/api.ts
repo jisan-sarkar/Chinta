@@ -38,10 +38,9 @@ export type ProviderCredentialStatus = {
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const init: RequestInit = {
     method: options.method ?? "GET",
+    credentials: "include",
     headers: {
       "content-type": "application/json",
-      "x-user-id": "dev-user",
-      "x-user-email": "dev@chinta.local",
     },
   };
 
@@ -110,10 +109,9 @@ export async function streamChat(
 ): Promise<void> {
   const response = await fetch(`${apiUrl}/api/v1/chat/stream`, {
     method: "POST",
+    credentials: "include",
     headers: {
       "content-type": "application/json",
-      "x-user-id": "dev-user",
-      "x-user-email": "dev@chinta.local",
     },
     body: JSON.stringify(body),
   });

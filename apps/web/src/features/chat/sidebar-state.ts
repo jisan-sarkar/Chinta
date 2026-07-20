@@ -10,6 +10,14 @@ export const collapsedSidebarTargets = [
   "pinned",
   "recent",
 ] as const;
+export const guestSidebarMainActions = ["new-chat"] as const;
+export const guestCollapsedSidebarTargets = ["new-chat"] as const;
+export const guestSidebarPlaceholderActions = [
+  "pricing",
+  "settings",
+  "help",
+] as const;
+export const guestSidebarAuthActions = ["login", "signup"] as const;
 
 export function splitConversationsByPinned(conversations: Conversation[]) {
   return {

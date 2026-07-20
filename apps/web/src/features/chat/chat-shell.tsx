@@ -1,9 +1,11 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
 import { api, streamChat } from "@/lib/api";
+import { authClient, signOut } from "@/lib/auth-client";
+import { AuthModal, type AuthModalMode } from "./auth-modal";
 import { getSelectableModels } from "./model-picker";
 import { useChatStore } from "./chat-store";
 import { ChatComposer } from "./chat-composer";
@@ -12,6 +14,7 @@ import { getComposerPlacement } from "./chat-layout";
 import { ChatSidebar } from "./chat-sidebar";
 import { MessageList } from "./message-list";
 import { ModelModal } from "./model-modal";
+import { getOAuthCallbackError } from "./oauth-callback";
 import { ProviderModal } from "./provider-modal";
 import { getProviderOption } from "./provider-catalog";
 import { isProviderConnected } from "./provider-picker";
@@ -25,6 +28,9 @@ import {
 
 export function ChatShell() {
   const queryClient = useQueryClient();
+  const session = authClient.useSession();
+  const currentUser = session.data?.user;
+  const guestMode = !currentUser;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const sidebarExpanded = useSyncExternalStore(
     subscribeToSidebarExpandedPreference,
@@ -35,10 +41,28 @@ export function ChatShell() {
     useState<SidebarFocusTarget>();
   const [providerModalOpen, setProviderModalOpen] = useState(false);
   const [modelModalOpen, setModelModalOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<AuthModalMode>("login");
+  const [authError, setAuthError] = useState<string>();
   const [query, setQuery] = useState("");
   const [prompt, setPrompt] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const chat = useChatStore();
+
+  useEffect(() => {
+    const oauthError = getOAuthCallbackError(window.location.search);
+
+    if (!oauthError) {
+      return;
+    }
+
+    queueMicrotask(() => {
+      setAuthError(oauthError);
+      setAuthModalMode("login");
+      setAuthModalOpen(true);
+    });
+    window.history.replaceState(null, "", window.location.pathname);
+  }, []);
 
   function updateSidebarExpanded(expanded: boolean) {
     writeSidebarExpandedPreference(window.localStorage, expanded);
@@ -48,16 +72,19 @@ export function ChatShell() {
   const conversations = useQuery({
     queryKey: ["conversations", query],
     queryFn: () => api.conversations.list(query),
+    enabled: Boolean(currentUser),
   });
 
   const models = useQuery({
     queryKey: ["models"],
     queryFn: api.models.list,
+    enabled: Boolean(currentUser),
   });
 
   const credentials = useQuery({
     queryKey: ["provider-credentials"],
     queryFn: api.credentials.list,
+    enabled: Boolean(currentUser),
   });
 
   const activeTitle = useMemo(() => {
@@ -81,6 +108,7 @@ export function ChatShell() {
     selectableModels.some((model) => model.id === chat.selectedModel);
   const canSend =
     prompt.trim().length > 0 &&
+    !guestMode &&
     providerConnected &&
     selectedModelExists &&
     !isStreaming;
@@ -106,6 +134,9 @@ export function ChatShell() {
     const text = prompt.trim();
 
     if (!canSend) {
+      if (guestMode) {
+        openAuth("login");
+      }
       return;
     }
 
@@ -147,6 +178,24 @@ export function ChatShell() {
     }
   }
 
+  function openAuth(mode: AuthModalMode) {
+    setAuthError(undefined);
+    setAuthModalMode(mode);
+    setAuthModalOpen(true);
+  }
+
+  async function handleAuthenticated() {
+    await session.refetch();
+    await queryClient.invalidateQueries();
+  }
+
+  async function handleSignOut() {
+    await signOut();
+    chat.reset();
+    await session.refetch();
+    queryClient.clear();
+  }
+
   return (
     <div className="flex min-h-dvh overflow-hidden bg-[var(--background)] text-[var(--foreground)]">
       <ChatSidebar
@@ -156,8 +205,20 @@ export function ChatShell() {
         open={sidebarOpen}
         expanded={sidebarExpanded}
         focusTarget={sidebarFocusTarget}
+        guestMode={guestMode}
+        currentUser={
+          currentUser
+            ? {
+                name: currentUser.name,
+                email: currentUser.email,
+                image: currentUser.image ?? null,
+              }
+            : undefined
+        }
         onQueryChange={setQuery}
         onNewChat={chat.reset}
+        onOpenAuth={openAuth}
+        onSignOut={() => void handleSignOut()}
         onLoadConversation={(id) => void loadConversation(id)}
         onOpenChange={setSidebarOpen}
         onExpandedChange={updateSidebarExpanded}
@@ -167,7 +228,9 @@ export function ChatShell() {
       <main className="flex h-dvh min-w-0 flex-1 flex-col overflow-hidden">
         <ChatHeader
           title={activeTitle}
+          guestMode={guestMode}
           onOpenSidebar={() => setSidebarOpen(true)}
+          onOpenAuth={openAuth}
         />
 
         <section className="flex min-h-0 flex-1 overflow-hidden">
@@ -221,6 +284,13 @@ export function ChatShell() {
             onOpenChange={setModelModalOpen}
             models={models.data ?? []}
             credentials={credentials.data ?? []}
+          />
+          <AuthModal
+            open={authModalOpen && !currentUser}
+            mode={authModalMode}
+            initialError={authError}
+            onOpenChange={setAuthModalOpen}
+            onAuthenticated={handleAuthenticated}
           />
         </section>
       </main>

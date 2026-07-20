@@ -1,12 +1,18 @@
 "use client";
 
 import {
+  BadgeDollarSign,
   Clock3,
+  CircleHelp,
+  LogIn,
+  LogOut,
   PanelLeftClose,
   PanelLeftOpen,
   Pin,
   Search,
+  Settings,
   SquarePen,
+  UserPlus,
   type LucideIcon,
 } from "lucide-react";
 import { type Conversation } from "@chinta/shared";
@@ -20,6 +26,15 @@ import {
   splitConversationsByPinned,
 } from "./sidebar-state";
 
+type OpenAuthHandler = ((mode: "login" | "signup") => void) | undefined;
+type SidebarUser =
+  | {
+      name?: string | null;
+      email: string;
+      image?: string | null;
+    }
+  | undefined;
+
 export function ChatSidebar({
   conversations,
   activeConversationId,
@@ -27,8 +42,12 @@ export function ChatSidebar({
   open,
   expanded,
   focusTarget,
+  guestMode = false,
+  currentUser,
   onQueryChange,
   onNewChat,
+  onOpenAuth,
+  onSignOut,
   onLoadConversation,
   onOpenChange,
   onExpandedChange,
@@ -40,8 +59,12 @@ export function ChatSidebar({
   open: boolean;
   expanded: boolean;
   focusTarget: SidebarFocusTarget | undefined;
+  guestMode?: boolean;
+  currentUser: SidebarUser;
   onQueryChange: (query: string) => void;
   onNewChat: () => void;
+  onOpenAuth: OpenAuthHandler;
+  onSignOut: () => void;
   onLoadConversation: (id: string) => void;
   onOpenChange: (open: boolean) => void;
   onExpandedChange: (expanded: boolean) => void;
@@ -117,8 +140,12 @@ export function ChatSidebar({
             searchInputRef={searchInputRef}
             pinnedSectionRef={pinnedSectionRef}
             recentSectionRef={recentSectionRef}
+            guestMode={guestMode}
+            currentUser={currentUser}
             onQueryChange={onQueryChange}
             onNewChat={startNewChat}
+            onOpenAuth={onOpenAuth}
+            onSignOut={onSignOut}
             onLoadConversation={(id) => {
               onLoadConversation(id);
               onOpenChange(false);
@@ -135,8 +162,12 @@ export function ChatSidebar({
           )}
         >
           <CollapsedRail
+            guestMode={guestMode}
+            currentUser={currentUser}
             onToggleExpanded={() => onExpandedChange(true)}
             onNewChat={startNewChat}
+            onOpenAuth={onOpenAuth}
+            onSignOut={onSignOut}
             onFocusSearch={() => openFocused("search")}
             onFocusPinned={() => openFocused("pinned")}
             onFocusRecent={() => openFocused("recent")}
@@ -155,8 +186,12 @@ function ExpandedSidebarContent({
   searchInputRef,
   pinnedSectionRef,
   recentSectionRef,
+  guestMode,
+  currentUser,
   onQueryChange,
   onNewChat,
+  onOpenAuth,
+  onSignOut,
   onLoadConversation,
   onFocusSearch,
   onToggleExpanded,
@@ -168,8 +203,12 @@ function ExpandedSidebarContent({
   searchInputRef: RefObject<HTMLInputElement | null>;
   pinnedSectionRef: RefObject<HTMLDivElement | null>;
   recentSectionRef: RefObject<HTMLDivElement | null>;
+  guestMode: boolean;
+  currentUser: SidebarUser;
   onQueryChange: (query: string) => void;
   onNewChat: () => void;
+  onOpenAuth: OpenAuthHandler;
+  onSignOut: () => void;
   onLoadConversation: (id: string) => void;
   onFocusSearch: () => void;
   onToggleExpanded: () => void;
@@ -181,26 +220,28 @@ function ExpandedSidebarContent({
           <button
             type="button"
             onClick={onNewChat}
-            className="grid h-9 w-16 shrink-0 place-items-center rounded-xl outline-none transition-[background-color,box-shadow] duration-200 hover:bg-[var(--card)] focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+            className="grid h-6 w-9 shrink-0 place-items-center rounded-md outline-none transition-[background-color,box-shadow] duration-200 hover:bg-[var(--card)] focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
             aria-label="Go home"
             title="Chinta"
           >
-            <LogoImage className="h-7 w-14 shrink-0" />
+            <LogoImage className="h-6 w-9 shrink-0" />
           </button>
 
-          <div className="relative min-w-0 flex-1">
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)]"
-              size={16}
-            />
-            <Input
-              ref={searchInputRef}
-              value={query}
-              onChange={(event) => onQueryChange(event.target.value)}
-              placeholder="Search chats"
-              className="h-9 rounded-xl bg-[var(--card)] pl-9"
-            />
-          </div>
+          {guestMode ? <div className="min-w-0 flex-1" /> : (
+            <div className="relative min-w-0 flex-1">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)]"
+                size={16}
+              />
+              <Input
+                ref={searchInputRef}
+                value={query}
+                onChange={(event) => onQueryChange(event.target.value)}
+                placeholder="Search chats"
+                className="h-9 rounded-xl bg-[var(--card)] pl-9"
+              />
+            </div>
+          )}
 
           <Button
             size="icon"
@@ -216,41 +257,60 @@ function ExpandedSidebarContent({
 
       <nav className="shrink-0 px-2 pb-2">
         <SidebarAction icon={SquarePen} label="New chat" onClick={onNewChat} />
-        <SidebarAction icon={Search} label="Search chats" onClick={onFocusSearch} />
+        {!guestMode ? (
+          <SidebarAction icon={Search} label="Search chats" onClick={onFocusSearch} />
+        ) : null}
       </nav>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
-        <ConversationSection
-          sectionRef={pinnedSectionRef}
-          title="Pinned"
-          icon={Pin}
-          conversations={pinned}
-          activeConversationId={activeConversationId}
-          emptyText="No pinned chats yet"
-          onLoadConversation={onLoadConversation}
-        />
-        <ConversationSection
-          sectionRef={recentSectionRef}
-          title="Recents"
-          icon={Clock3}
-          conversations={recent}
-          activeConversationId={activeConversationId}
-          onLoadConversation={onLoadConversation}
-        />
-      </div>
+      {guestMode ? (
+        <GuestSidebarFooter onOpenAuth={onOpenAuth} />
+      ) : (
+        <>
+          <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
+            <ConversationSection
+              sectionRef={pinnedSectionRef}
+              title="Pinned"
+              icon={Pin}
+              conversations={pinned}
+              activeConversationId={activeConversationId}
+              emptyText="No pinned chats yet"
+              onLoadConversation={onLoadConversation}
+            />
+            <ConversationSection
+              sectionRef={recentSectionRef}
+              title="Recents"
+              icon={Clock3}
+              conversations={recent}
+              activeConversationId={activeConversationId}
+              onLoadConversation={onLoadConversation}
+            />
+          </div>
+          {currentUser ? (
+            <AccountSidebarFooter user={currentUser} onSignOut={onSignOut} />
+          ) : null}
+        </>
+      )}
     </>
   );
 }
 
 function CollapsedRail({
+  guestMode,
+  currentUser,
   onToggleExpanded,
   onNewChat,
+  onOpenAuth,
+  onSignOut,
   onFocusSearch,
   onFocusPinned,
   onFocusRecent,
 }: {
+  guestMode: boolean;
+  currentUser: SidebarUser;
   onToggleExpanded: () => void;
   onNewChat: () => void;
+  onOpenAuth: OpenAuthHandler;
+  onSignOut: () => void;
   onFocusSearch: () => void;
   onFocusPinned: () => void;
   onFocusRecent: () => void;
@@ -265,7 +325,7 @@ function CollapsedRail({
           aria-label="Expand sidebar"
           title="Expand sidebar"
         >
-          <LogoImage className="h-5 w-8 transition group-hover:hidden" />
+          <LogoImage className="h-6 w-9 transition group-hover:hidden" />
           <PanelLeftOpen
             size={18}
             className="hidden transition group-hover:block"
@@ -274,20 +334,131 @@ function CollapsedRail({
         </button>
 
         <RailButton icon={SquarePen} label="New chat" onClick={onNewChat} />
-        <RailButton icon={Search} label="Search chats" onClick={onFocusSearch} />
-        <RailButton icon={Pin} label="Pinned chats" onClick={onFocusPinned} />
-        <RailButton icon={Clock3} label="Recent chats" onClick={onFocusRecent} />
+        {!guestMode ? (
+          <>
+            <RailButton icon={Search} label="Search chats" onClick={onFocusSearch} />
+            <RailButton icon={Pin} label="Pinned chats" onClick={onFocusPinned} />
+            <RailButton icon={Clock3} label="Recent chats" onClick={onFocusRecent} />
+          </>
+        ) : null}
       </div>
 
       <button
         type="button"
+        onClick={guestMode ? () => onOpenAuth?.("login") : onSignOut}
         className="grid size-9 place-items-center rounded-full border border-[var(--border)] bg-[var(--card)] text-xs font-medium outline-none transition hover:bg-[var(--muted)] focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
-        aria-label="User menu"
-        title="Zisan Sarker"
+        aria-label={guestMode ? "Log in" : "Log out"}
+        title={guestMode ? "Log in" : "Log out"}
       >
-        Z
+        {guestMode ? <LogIn size={17} /> : getUserInitial(currentUser)}
       </button>
     </>
+  );
+}
+
+function AccountSidebarFooter({
+  user,
+  onSignOut,
+}: {
+  user: {
+    name?: string | null;
+    email: string;
+    image?: string | null;
+  };
+  onSignOut: () => void;
+}) {
+  return (
+    <div className="shrink-0 border-t border-[var(--border)]/70 p-2">
+      <div className="mb-2 flex min-w-0 items-center gap-3 rounded-2xl bg-[var(--card)] p-3">
+        <div className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--foreground)] text-sm font-semibold text-[var(--background)]">
+          {getUserInitial(user)}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-medium">
+            {user.name ?? user.email}
+          </div>
+          <div className="truncate text-xs text-[var(--muted-foreground)]">
+            {user.email}
+          </div>
+        </div>
+      </div>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={onSignOut}
+        className="w-full rounded-xl"
+      >
+        <LogOut size={16} />
+        Log out
+      </Button>
+    </div>
+  );
+}
+
+function getUserInitial(
+  user:
+    | {
+        name?: string | null;
+        email: string;
+      }
+    | undefined,
+) {
+  return (user?.name ?? user?.email ?? "U").slice(0, 1).toUpperCase();
+}
+
+function GuestSidebarFooter({
+  onOpenAuth,
+}: {
+  onOpenAuth: OpenAuthHandler;
+}) {
+  return (
+    <div className="mt-auto min-h-0 overflow-y-auto px-2 pb-3">
+      <div className="space-y-1 border-t border-[var(--border)]/70 pt-3">
+        <SidebarAction
+          icon={BadgeDollarSign}
+          label="See plans and pricing"
+          onClick={() => undefined}
+        />
+        <SidebarAction
+          icon={Settings}
+          label="Settings"
+          onClick={() => undefined}
+        />
+        <SidebarAction
+          icon={CircleHelp}
+          label="Help"
+          onClick={() => undefined}
+        />
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-3 shadow-sm">
+        <p className="text-sm font-semibold">Get responses tailored to you</p>
+        <p className="mt-2 text-sm leading-5 text-[var(--muted-foreground)]">
+          Log in to save chats, manage settings, and connect future workspace
+          features.
+        </p>
+        <div className="mt-3 grid gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenAuth?.("login")}
+            className="w-full rounded-full"
+          >
+            <LogIn size={16} />
+            Log in
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            onClick={() => onOpenAuth?.("signup")}
+            className="w-full rounded-full"
+          >
+            <UserPlus size={16} />
+            Sign up
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -296,7 +467,7 @@ function LogoImage({ className }: { className?: string }) {
     <span
       aria-hidden="true"
       className={cn(
-        "inline-block bg-black dark:bg-white",
+        "inline-block bg-[var(--foreground)]",
         className,
       )}
       style={{
@@ -308,6 +479,8 @@ function LogoImage({ className }: { className?: string }) {
         maskRepeat: "no-repeat",
         maskPosition: "center",
         maskSize: "contain",
+        filter:
+          "drop-shadow(0 0 0.45px var(--foreground)) drop-shadow(0 0 0.45px var(--foreground))",
       }}
     />
   );

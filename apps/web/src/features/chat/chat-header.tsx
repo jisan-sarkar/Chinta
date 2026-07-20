@@ -7,10 +7,14 @@ import { Button } from "@/components/ui/button";
 
 export function ChatHeader({
   title,
+  guestMode = false,
   onOpenSidebar,
+  onOpenAuth,
 }: {
   title: string;
+  guestMode?: boolean;
   onOpenSidebar: () => void;
+  onOpenAuth?: (mode: "login" | "signup") => void;
 }) {
   const { resolvedTheme, setTheme } = useTheme();
 
@@ -30,7 +34,27 @@ export function ChatHeader({
         </div>
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1.5">
+        {guestMode ? (
+          <div className="hidden items-center gap-2 sm:flex">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onOpenAuth?.("login")}
+              className="rounded-full bg-[var(--card)]"
+            >
+              Log in
+            </Button>
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() => onOpenAuth?.("signup")}
+              className="rounded-full"
+            >
+              Sign up
+            </Button>
+          </div>
+        ) : null}
         <Button
           size="icon"
           onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}

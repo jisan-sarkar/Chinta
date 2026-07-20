@@ -3,6 +3,10 @@ import { type Conversation } from "@chinta/shared";
 
 import {
   collapsedSidebarTargets,
+  guestCollapsedSidebarTargets,
+  guestSidebarAuthActions,
+  guestSidebarMainActions,
+  guestSidebarPlaceholderActions,
   readSidebarExpandedPreference,
   sidebarExpandedStorageKey,
   splitConversationsByPinned,
@@ -82,5 +86,19 @@ describe("sidebar state", () => {
       "pinned",
       "recent",
     ]);
+  });
+
+  it("defines guest sidebar main actions", () => {
+    expect(guestSidebarMainActions).toEqual(["new-chat"]);
+    expect(guestCollapsedSidebarTargets).toEqual(["new-chat"]);
+  });
+
+  it("defines guest placeholder and auth actions", () => {
+    expect(guestSidebarPlaceholderActions).toEqual([
+      "pricing",
+      "settings",
+      "help",
+    ]);
+    expect(guestSidebarAuthActions).toEqual(["login", "signup"]);
   });
 });
