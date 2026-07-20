@@ -32,13 +32,15 @@ export class ProviderCredentialsService {
   }
 
   async save(userId: string, input: SaveProviderCredentialRequest) {
+    const apiKey = input.apiKey.trim();
     const provider = this.providers.getProvider(input.provider);
-    const valid = await provider.validateCredential(input.apiKey);
+    const validation = await provider.validateCredential(apiKey);
 
-    if (!valid) {
+    if (!validation.valid) {
       throw new BadRequestException({
         code: "INVALID_PROVIDER_CREDENTIAL",
-        message: "The provider API key could not be validated.",
+        message:
+          validation.message ?? "The provider API key could not be validated.",
       });
     }
 
@@ -53,14 +55,14 @@ export class ProviderCredentialsService {
         userId,
         provider: Provider.openrouter,
         label: input.label,
-        encryptedKey: this.crypto.encryptSecret(input.apiKey),
-        keyFingerprint: this.crypto.fingerprint(input.apiKey),
+        encryptedKey: this.crypto.encryptSecret(apiKey),
+        keyFingerprint: this.crypto.fingerprint(apiKey),
         verifiedAt: new Date(),
       },
       update: {
         label: input.label,
-        encryptedKey: this.crypto.encryptSecret(input.apiKey),
-        keyFingerprint: this.crypto.fingerprint(input.apiKey),
+        encryptedKey: this.crypto.encryptSecret(apiKey),
+        keyFingerprint: this.crypto.fingerprint(apiKey),
         verifiedAt: new Date(),
       },
     });

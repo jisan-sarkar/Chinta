@@ -15,6 +15,16 @@ type RequestOptions = {
   body?: unknown;
 };
 
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly code?: string,
+  ) {
+    super(message);
+  }
+}
+
 export type ProviderCredentialStatus = {
   id: string;
   provider: "openrouter";
@@ -42,7 +52,19 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   const response = await fetch(`${apiUrl}/api/v1${path}`, init);
 
   if (!response.ok) {
-    throw new Error(await response.text());
+    const text = await response.text();
+    let message = text || "Request failed.";
+    let code: string | undefined;
+
+    try {
+      const payload = JSON.parse(text) as { message?: string; code?: string };
+      message = payload.message ?? message;
+      code = payload.code;
+    } catch {
+      // Preserve the raw response body when it is not JSON.
+    }
+
+    throw new ApiError(message, response.status, code);
   }
 
   return (await response.json()) as T;

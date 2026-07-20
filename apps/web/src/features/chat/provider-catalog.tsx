@@ -11,6 +11,7 @@ export type ProviderOption = {
   label: string;
   description: string;
   live: boolean;
+  connectable: boolean;
 };
 
 const defaultProviderOption: ProviderOption = {
@@ -18,6 +19,7 @@ const defaultProviderOption: ProviderOption = {
   label: "OpenRouter",
   description: "Live provider for this version",
   live: true,
+  connectable: true,
 };
 
 export const providerOptions: ProviderOption[] = [
@@ -27,12 +29,49 @@ export const providerOptions: ProviderOption[] = [
     label: "OpenAI",
     description: "Direct provider support coming later",
     live: false,
+    connectable: false,
+  },
+  {
+    id: "anthropic",
+    label: "Anthropic",
+    description: "Direct provider support coming later",
+    live: false,
+    connectable: false,
   },
   {
     id: "gemini",
-    label: "Gemini",
+    label: "Google Gemini",
     description: "Direct provider support coming later",
     live: false,
+    connectable: false,
+  },
+  {
+    id: "groq",
+    label: "Groq",
+    description: "Direct provider support coming later",
+    live: false,
+    connectable: false,
+  },
+  {
+    id: "together",
+    label: "Together AI",
+    description: "Direct provider support coming later",
+    live: false,
+    connectable: false,
+  },
+  {
+    id: "deepseek",
+    label: "DeepSeek",
+    description: "Direct provider support coming later",
+    live: false,
+    connectable: false,
+  },
+  {
+    id: "ollama",
+    label: "Ollama",
+    description: "Local provider support coming later",
+    live: false,
+    connectable: false,
   },
 ];
 

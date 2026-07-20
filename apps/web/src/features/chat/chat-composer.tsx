@@ -1,7 +1,6 @@
 "use client";
 
 import { AudioLines, Mic, Send } from "lucide-react";
-import { type Model } from "@chinta/shared";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,18 +15,22 @@ export function ChatComposer({
   prompt,
   isStreaming,
   canSend,
-  models,
   credentials,
+  centered = false,
   onPromptChange,
   onSend,
+  onOpenProviderModal,
+  onOpenModelModal,
 }: {
   prompt: string;
   isStreaming: boolean;
   canSend: boolean;
-  models: Model[];
   credentials: ProviderCredentialStatus[];
+  centered?: boolean;
   onPromptChange: (prompt: string) => void;
   onSend: () => void;
+  onOpenProviderModal: () => void;
+  onOpenModelModal: () => void;
 }) {
   const primaryAction = getComposerPrimaryAction({
     prompt,
@@ -36,7 +39,12 @@ export function ChatComposer({
   });
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-3 pb-4 sm:px-4">
+    <div
+      className={cn(
+        "mx-auto w-full max-w-4xl px-3 sm:px-4",
+        centered ? "" : "pb-4",
+      )}
+    >
       <div className="flex min-h-16 items-end gap-2 rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-2 shadow-sm">
         <ComposerAddMenu />
         <Textarea
@@ -53,8 +61,14 @@ export function ChatComposer({
           className="max-h-32 min-h-10 flex-1 border-0 bg-transparent px-0 py-2 text-base focus:ring-0"
         />
         <div className="flex shrink-0 items-center gap-1 pb-0.5">
-          <ProviderPicker credentials={credentials} compact />
-          <ModelPicker models={models} credentials={credentials} compact />
+          <ProviderPicker
+            credentials={credentials}
+            onOpen={onOpenProviderModal}
+          />
+          <ModelPicker
+            credentials={credentials}
+            onOpen={onOpenModelModal}
+          />
           <Button
             size="icon"
             aria-label="Voice input"

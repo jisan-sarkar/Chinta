@@ -1,21 +1,16 @@
 "use client";
 
-import { Menu, Moon, Settings, Sun } from "lucide-react";
+import { Menu, SunMoon } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/cn";
 
 export function ChatHeader({
   title,
-  settingsOpen,
   onOpenSidebar,
-  onToggleSettings,
 }: {
   title: string;
-  settingsOpen: boolean;
   onOpenSidebar: () => void;
-  onToggleSettings: () => void;
 }) {
   const { resolvedTheme, setTheme } = useTheme();
 
@@ -39,15 +34,7 @@ export function ChatHeader({
           onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
           aria-label="Toggle theme"
         >
-          {resolvedTheme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-        </Button>
-        <Button
-          size="icon"
-          onClick={onToggleSettings}
-          aria-label="Settings"
-          className={cn(settingsOpen && "bg-[var(--muted)]")}
-        >
-          <Settings size={18} />
+          <SunMoon size={18} />
         </Button>
       </div>
     </header>

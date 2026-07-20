@@ -6,7 +6,6 @@ import {
   Param,
   Post,
   UseGuards,
-  UsePipes,
 } from "@nestjs/common";
 import {
   saveProviderCredentialRequestSchema,
@@ -30,10 +29,10 @@ export class ProviderCredentialsController {
   }
 
   @Post()
-  @UsePipes(new ZodValidationPipe(saveProviderCredentialRequestSchema))
   save(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() body: SaveProviderCredentialRequest,
+    @Body(new ZodValidationPipe(saveProviderCredentialRequestSchema))
+    body: SaveProviderCredentialRequest,
   ) {
     return this.credentials.save(user.id, body);
   }

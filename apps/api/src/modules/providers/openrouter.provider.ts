@@ -1,9 +1,10 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { createParser, type EventSourceMessage } from "eventsource-parser";
 import { type MessagePart, type Model } from "@chinta/shared";
 
 import {
   type AiProvider,
+  type CredentialValidationResult,
   type StreamChatChunk,
   type StreamChatInput,
 } from "./ai-provider";
@@ -25,6 +26,7 @@ type OpenRouterModel = {
 @Injectable()
 export class OpenRouterProvider implements AiProvider {
   readonly provider = "openrouter" as const;
+  private readonly logger = new Logger(OpenRouterProvider.name);
   private readonly baseUrl = "https://openrouter.ai/api/v1";
 
   async listModels(apiKey?: string): Promise<Model[]> {
@@ -54,12 +56,36 @@ export class OpenRouterProvider implements AiProvider {
     }));
   }
 
-  async validateCredential(apiKey: string): Promise<boolean> {
-    const response = await fetch(`${this.baseUrl}/auth/key`, {
-      headers: this.authHeaders(apiKey),
-    });
+  async validateCredential(apiKey: string): Promise<CredentialValidationResult> {
+    try {
+      const response = await fetch(`${this.baseUrl}/key`, {
+        headers: this.authHeaders(apiKey),
+      });
 
-    return response.ok;
+      if (response.ok) {
+        return { valid: true };
+      }
+
+      this.logger.warn(
+        `OpenRouter credential validation failed with status ${response.status}`,
+      );
+
+      return {
+        valid: false,
+        message: this.validationMessageForStatus(response.status),
+      };
+    } catch (error) {
+      this.logger.warn(
+        error instanceof Error
+          ? `OpenRouter credential validation request failed: ${error.message}`
+          : "OpenRouter credential validation request failed",
+      );
+
+      return {
+        valid: false,
+        message: "Could not reach OpenRouter from the API server.",
+      };
+    }
   }
 
   async *streamChatCompletion(
@@ -145,6 +171,26 @@ export class OpenRouterProvider implements AiProvider {
 
   private authHeaders(apiKey: string): Record<string, string> {
     return { authorization: `Bearer ${apiKey}` };
+  }
+
+  private validationMessageForStatus(status: number): string {
+    if (status === 401) {
+      return "OpenRouter rejected this key. Create a new key and try again.";
+    }
+
+    if (status === 403) {
+      return "OpenRouter denied access for this key.";
+    }
+
+    if (status === 429) {
+      return "OpenRouter rate-limited key validation. Try again shortly.";
+    }
+
+    if (status >= 500) {
+      return "OpenRouter is currently failing validation requests.";
+    }
+
+    return `OpenRouter key validation failed with status ${status}.`;
   }
 
   private capabilitiesFor(model: OpenRouterModel): Model["capabilities"] {

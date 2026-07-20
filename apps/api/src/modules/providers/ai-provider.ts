@@ -17,9 +17,14 @@ export type StreamChatChunk =
   | { type: "usage"; usage: Record<string, unknown> }
   | { type: "done" };
 
+export type CredentialValidationResult = {
+  valid: boolean;
+  message?: string;
+};
+
 export interface AiProvider {
   readonly provider: Provider;
   listModels(apiKey?: string): Promise<Model[]>;
-  validateCredential(apiKey: string): Promise<boolean>;
+  validateCredential(apiKey: string): Promise<CredentialValidationResult>;
   streamChatCompletion(input: StreamChatInput): AsyncIterable<StreamChatChunk>;
 }

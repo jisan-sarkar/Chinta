@@ -8,16 +8,19 @@ import { getSelectableModels } from "./model-picker";
 import { useChatStore } from "./chat-store";
 import { ChatComposer } from "./chat-composer";
 import { ChatHeader } from "./chat-header";
+import { getComposerPlacement } from "./chat-layout";
 import { ChatSidebar } from "./chat-sidebar";
 import { MessageList } from "./message-list";
-import { ProviderSettingsPanel } from "./provider-settings-panel";
+import { ModelModal } from "./model-modal";
+import { ProviderModal } from "./provider-modal";
 import { getProviderOption } from "./provider-catalog";
 import { isProviderConnected } from "./provider-picker";
 
 export function ChatShell() {
   const queryClient = useQueryClient();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [providerModalOpen, setProviderModalOpen] = useState(false);
+  const [modelModalOpen, setModelModalOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [prompt, setPrompt] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -62,6 +65,10 @@ export function ChatShell() {
     providerConnected &&
     selectedModelExists &&
     !isStreaming;
+  const composerPlacement = getComposerPlacement({
+    messages: chat.messages,
+    streamingText: chat.streamingText,
+  });
 
   async function loadConversation(id: string) {
     chat.setActiveConversationId(id);
@@ -136,31 +143,61 @@ export function ChatShell() {
       <main className="flex min-w-0 flex-1 flex-col">
         <ChatHeader
           title={activeTitle}
-          settingsOpen={settingsOpen}
           onOpenSidebar={() => setSidebarOpen(true)}
-          onToggleSettings={() => setSettingsOpen((value) => !value)}
         />
 
         <section className="flex min-h-0 flex-1 overflow-hidden">
           <div className="flex min-w-0 flex-1 flex-col">
-            <div className="min-h-0 flex-1 overflow-y-auto">
-              <MessageList
-                messages={chat.messages}
-                streamingText={chat.streamingText}
-              />
-            </div>
-            <ChatComposer
-              prompt={prompt}
-              isStreaming={isStreaming}
-              canSend={canSend}
-              models={models.data ?? []}
-              credentials={credentials.data ?? []}
-              onPromptChange={setPrompt}
-              onSend={() => void sendMessage()}
-            />
+            {composerPlacement === "center" ? (
+              <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-8 px-3 pb-20">
+                <h1 className="text-center text-2xl font-semibold tracking-normal sm:text-3xl">
+                  Good to see you, Zisan Sarker.
+                </h1>
+                <ChatComposer
+                  prompt={prompt}
+                  isStreaming={isStreaming}
+                  canSend={canSend}
+                  credentials={credentials.data ?? []}
+                  centered
+                  onPromptChange={setPrompt}
+                  onSend={() => void sendMessage()}
+                  onOpenProviderModal={() => setProviderModalOpen(true)}
+                  onOpenModelModal={() => setModelModalOpen(true)}
+                />
+              </div>
+            ) : (
+              <>
+                <div className="min-h-0 flex-1 overflow-y-auto">
+                  <MessageList
+                    messages={chat.messages}
+                    streamingText={chat.streamingText}
+                  />
+                </div>
+                <ChatComposer
+                  prompt={prompt}
+                  isStreaming={isStreaming}
+                  canSend={canSend}
+                  credentials={credentials.data ?? []}
+                  onPromptChange={setPrompt}
+                  onSend={() => void sendMessage()}
+                  onOpenProviderModal={() => setProviderModalOpen(true)}
+                  onOpenModelModal={() => setModelModalOpen(true)}
+                />
+              </>
+            )}
           </div>
 
-          {settingsOpen ? <ProviderSettingsPanel /> : null}
+          <ProviderModal
+            open={providerModalOpen}
+            onOpenChange={setProviderModalOpen}
+            credentials={credentials.data ?? []}
+          />
+          <ModelModal
+            open={modelModalOpen}
+            onOpenChange={setModelModalOpen}
+            models={models.data ?? []}
+            credentials={credentials.data ?? []}
+          />
         </section>
       </main>
     </div>

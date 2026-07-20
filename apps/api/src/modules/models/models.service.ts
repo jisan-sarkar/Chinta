@@ -6,16 +6,36 @@ import { ProvidersService } from "../providers/providers.service";
 
 @Injectable()
 export class ModelsService {
+  private readonly sparseCatalogThreshold = 25;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly providers: ProvidersService,
   ) {}
 
-  list() {
+  async list() {
+    await this.syncOpenRouterModelsWhenSparse();
+
+    return this.findOpenRouterModels();
+  }
+
+  private findOpenRouterModels() {
     return this.prisma.model.findMany({
       where: { provider: Provider.openrouter },
       orderBy: { name: "asc" },
     });
+  }
+
+  private async syncOpenRouterModelsWhenSparse(): Promise<void> {
+    const count = await this.prisma.model.count({
+      where: { provider: Provider.openrouter },
+    });
+
+    if (count >= this.sparseCatalogThreshold) {
+      return;
+    }
+
+    await this.syncOpenRouterModels();
   }
 
   async syncOpenRouterModels(): Promise<number> {
