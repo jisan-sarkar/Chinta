@@ -1,0 +1,238 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Provider {
+  openrouter
+}
+
+enum MessageRole {
+  system
+  user
+  assistant
+}
+
+enum MessagePartType {
+  text
+  image
+  file
+}
+
+model User {
+  id                  String               @id @default(cuid())
+  name                String?
+  email               String               @unique
+  emailVerified       Boolean              @default(false)
+  image               String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  sessions            Session[]
+  accounts            Account[]
+  settings            UserSettings?
+  providerCredentials ProviderCredential[]
+  conversations       Conversation[]
+  attachments         Attachment[]
+  shareLinks          ShareLink[]
+  usageEvents         UsageEvent[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verifications")
+}
+
+model UserSettings {
+  id                 String   @id @default(uuid()) @db.Uuid
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  defaultProvider    Provider @default(openrouter)
+  defaultModelId     String?
+  customInstructions String?
+  theme              String   @default("system")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("user_settings")
+}
+
+model ProviderCredential {
+  id             String    @id @default(uuid()) @db.Uuid
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider       Provider
+  label          String
+  encryptedKey   String
+  keyFingerprint String
+  verifiedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([userId, provider])
+  @@map("provider_credentials")
+}
+
+model Model {
+  id               String   @id
+  provider         Provider
+  name             String
+  description      String?
+  contextWindow    Int?
+  capabilities     String[]
+  inputTokenPrice  Decimal? @db.Decimal(20, 12)
+  outputTokenPrice Decimal? @db.Decimal(20, 12)
+  raw              Json
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([provider])
+  @@map("models")
+}
+
+model Conversation {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  modelId     String?
+  temporary   Boolean   @default(false)
+  pinnedAt    DateTime?
+  archivedAt  DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  messages    Message[]
+  attachments Attachment[]
+  shareLinks  ShareLink[]
+  usageEvents UsageEvent[]
+
+  @@index([userId, updatedAt])
+  @@map("conversations")
+}
+
+model Message {
+  id             String        @id @default(uuid()) @db.Uuid
+  conversationId String        @db.Uuid
+  conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           MessageRole
+  modelId        String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  parts          MessagePart[]
+  usageEvents    UsageEvent[]
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
+}
+
+model MessagePart {
+  id           String          @id @default(uuid()) @db.Uuid
+  messageId    String          @db.Uuid
+  message      Message         @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  type         MessagePartType
+  content      Json
+  order        Int
+  attachmentId String?         @db.Uuid
+  attachment   Attachment?     @relation(fields: [attachmentId], references: [id], onDelete: SetNull)
+  createdAt    DateTime        @default(now())
+
+  @@index([messageId, order])
+  @@map("message_parts")
+}
+
+model Attachment {
+  id             String        @id @default(uuid()) @db.Uuid
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversationId String?       @db.Uuid
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  storageKey     String        @unique
+  fileName       String
+  mimeType       String
+  byteSize       Int
+  createdAt      DateTime      @default(now())
+  messageParts   MessagePart[]
+
+  @@index([userId, createdAt])
+  @@map("attachments")
+}
+
+model ShareLink {
+  id             String       @id @default(uuid()) @db.Uuid
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversationId String       @db.Uuid
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  token          String       @unique
+  snapshot       Json
+  createdAt      DateTime     @default(now())
+  revokedAt      DateTime?
+
+  @@index([conversationId])
+  @@map("share_links")
+}
+
+model UsageEvent {
+  id             String        @id @default(uuid()) @db.Uuid
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversationId String?       @db.Uuid
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  messageId      String?       @db.Uuid
+  message        Message?      @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  provider       Provider
+  modelId        String
+  promptTokens   Int?
+  outputTokens   Int?
+  totalTokens    Int?
+  raw            Json?
+  createdAt      DateTime      @default(now())
+
+  @@index([userId, createdAt])
+  @@map("usage_events")
+}
